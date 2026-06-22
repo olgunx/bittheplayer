@@ -550,9 +550,123 @@ const String webClientHtml = r'''<!DOCTYPE html>
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        /* How to Play Modal Styles */
+        .info-icon-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: var(--secondary);
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+        .info-icon-btn:hover {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 0 15px var(--primary);
+            border-color: var(--primary);
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(10px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+        .modal-content {
+            max-width: 450px;
+            width: 90%;
+            padding: 24px;
+            position: relative;
+            animation: fadeIn 0.3s ease;
+            text-align: left;
+        }
+        .close-btn {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            font-size: 24px;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .close-btn:hover {
+            color: var(--error);
+        }
+        .help-section h3 {
+            margin: 0 0 6px 0;
+            font-size: 14px;
+            color: var(--secondary);
+            font-weight: 800;
+        }
+        .help-section p {
+            margin: 0;
+            font-size: 13px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
     </style>
 </head>
 <body>
+    <button id="leaderboard-btn" class="info-icon-btn" style="right: 70px;" onclick="toggleLeaderboardModal(true)">🏆</button>
+    <button id="info-btn" class="info-icon-btn" onclick="toggleHelpModal(true)">ⓘ</button>
+
+    <!-- Leaderboard Modal Overlay -->
+    <div id="leaderboard-modal" class="modal-overlay" onclick="closeLeaderboardModal(event)">
+        <div class="modal-content glass-card" style="max-width: 460px; max-height: 85vh; display: flex; flex-direction: column;">
+            <span class="close-btn" onclick="toggleLeaderboardModal(false)">&times;</span>
+            <h2 style="color: var(--primary); margin-top: 0; font-weight: 900; letter-spacing: 0.5px; margin-bottom: 16px;">🏆 STANDINGS</h2>
+            <div id="leaderboard-modal-list" style="overflow-y: auto; flex-grow: 1; padding-right: 4px;">
+                <!-- Dynamically filled -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Modal Overlay -->
+    <div id="help-modal" class="modal-overlay" onclick="closeHelpModal(event)">
+        <div class="modal-content glass-card">
+            <span class="close-btn" onclick="toggleHelpModal(false)">&times;</span>
+            <h2 style="color: var(--primary); margin-top: 0; font-weight: 900; letter-spacing: 0.5px;">HOW TO PLAY</h2>
+            <div class="help-section">
+                <h3>🔨 The Auction</h3>
+                <p>Bid on footballers using the quick increment buttons (+$5M, +$10M, etc.) or a custom bid. Bids must exceed the current highest offer and fit your budget.</p>
+            </div>
+            <div class="help-section" style="margin-top: 16px;">
+                <h3>🛡️ Sniping Protection</h3>
+                <p>If any bid is placed in the last <strong>5 seconds</strong> of a round, the timer is extended by <strong>3 seconds</strong> to give others a chance to react.</p>
+            </div>
+            <div class="help-section" style="margin-top: 16px;">
+                <h3>🔄 Position Alternation</h3>
+                <p>Footballer positions alternate round-by-round (<strong>Striker, Winger, Center Mid, Center Back, Full Back</strong>). Build a balanced roster!</p>
+            </div>
+            <div class="help-section" style="margin-top: 16px;">
+                <h3>🏆 Winning Condition</h3>
+                <p>Your team's standing is determined by the total <strong>Real Value</strong> of your won footballers, not by your bid amount. Real values are hidden during bidding and revealed at the end.</p>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
         
         <!-- SCREEN 1: JOIN/LOGIN -->
@@ -621,9 +735,9 @@ const String webClientHtml = r'''<!DOCTYPE html>
             <!-- Inputs / Action area -->
             <div id="active-bid-controls">
                 <div class="quick-bids-grid">
+                    <button class="quick-bid-btn" id="qb-1">+1M</button>
                     <button class="quick-bid-btn" id="qb-5">+5M</button>
                     <button class="quick-bid-btn" id="qb-10">+10M</button>
-                    <button class="quick-bid-btn" id="qb-15">+15M</button>
                     <button class="quick-bid-btn" id="qb-20">+20M</button>
                 </div>
                 <div class="custom-bid-row">
@@ -700,9 +814,9 @@ const String webClientHtml = r'''<!DOCTYPE html>
         const errorBanner = document.getElementById('bid-error-banner');
         
         // Input buttons
+        const qb1 = document.getElementById('qb-1');
         const qb5 = document.getElementById('qb-5');
         const qb10 = document.getElementById('qb-10');
-        const qb15 = document.getElementById('qb-15');
         const qb20 = document.getElementById('qb-20');
         const customBidInput = document.getElementById('custom-bid-input');
         const customBidBtn = document.getElementById('custom-bid-btn');
@@ -913,9 +1027,9 @@ const String webClientHtml = r'''<!DOCTYPE html>
             
             // Update quick bid buttons viability
             const qbs = [
+                { btn: qb1, inc: 1 },
                 { btn: qb5, inc: 5 },
                 { btn: qb10, inc: 10 },
-                { btn: qb15, inc: 15 },
                 { btn: qb20, inc: 20 }
             ];
             
@@ -930,11 +1044,23 @@ const String webClientHtml = r'''<!DOCTYPE html>
         }
 
         let gamePlayersCache = [];
+        let gameRealValues = {};
+        let gamePositions = {};
+
         // Keep players cached internally
         const originalHandleMessage = handleMessage;
         handleMessage = function(msg) {
             if(msg.type === 'lobby_update' || msg.type === 'round_result' || msg.type === 'game_over') {
                 gamePlayersCache = msg.data.players || msg.data.scoreboard || [];
+            }
+            if(msg.type === 'round_result' || msg.type === 'game_over') {
+                if(msg.data.realValues) gameRealValues = msg.data.realValues;
+                if(msg.data.positions) gamePositions = msg.data.positions;
+            }
+            if(msg.type === 'game_reset_to_lobby') {
+                gamePlayersCache = [];
+                gameRealValues = {};
+                gamePositions = {};
             }
             originalHandleMessage(msg);
         };
@@ -1022,8 +1148,36 @@ const String webClientHtml = r'''<!DOCTYPE html>
             // Helper to calculate total team value
             function getTeamValue(player) {
                 let sum = 0;
+                let strikerCount = 0;
+                let midfielderCount = 0;
+                let defenderCount = 0;
                 player.wonFootballers.forEach(f => {
-                    sum += getRealValue(f);
+                    const val = getRealValue(f);
+                    const pos = positions[f] || 'Striker';
+                    if (pos === 'Striker') {
+                        strikerCount++;
+                        if (strikerCount > 1) {
+                            sum += val * 0.5;
+                        } else {
+                            sum += val;
+                        }
+                    } else if (pos === 'Center Mid' || pos === 'Winger') {
+                        midfielderCount++;
+                        if (midfielderCount > 2) {
+                            sum += val * 0.5;
+                        } else {
+                            sum += val;
+                        }
+                    } else if (pos === 'Center Back' || pos === 'Full Back') {
+                        defenderCount++;
+                        if (defenderCount > 2) {
+                            sum += val * 0.5;
+                        } else {
+                            sum += val;
+                        }
+                    } else {
+                        sum += val;
+                    }
                 });
                 return sum;
             }
@@ -1097,6 +1251,165 @@ const String webClientHtml = r'''<!DOCTYPE html>
                 gameOverList.appendChild(item);
             });
         }
+
+        window.toggleHelpModal = function(show) {
+            const modal = document.getElementById('help-modal');
+            if (modal) modal.style.display = show ? 'flex' : 'none';
+        };
+
+        window.closeHelpModal = function(event) {
+            const modal = document.getElementById('help-modal');
+            if (modal && event.target === modal) {
+                window.toggleHelpModal(false);
+            }
+        };
+
+        window.toggleLeaderboardModal = function(show) {
+            const modal = document.getElementById('leaderboard-modal');
+            if (!modal) return;
+            
+            if (show) {
+                const listContainer = document.getElementById('leaderboard-modal-list');
+                if (listContainer) {
+                    listContainer.innerHTML = '';
+                    
+                    if (gamePlayersCache.length === 0) {
+                        listContainer.innerHTML = '<div style="text-align: center; color: var(--text-muted); font-weight: bold; padding: 20px;">No players in lobby yet.</div>';
+                    } else {
+                        const list = [...gamePlayersCache];
+                        
+                        function getRealValue(name) {
+                            if (gameRealValues && gameRealValues[name] !== undefined) {
+                                return gameRealValues[name];
+                            }
+                            return 50;
+                        }
+                        
+                        function getTeamValue(player) {
+                            let sum = 0;
+                            let strikerCount = 0;
+                            let midfielderCount = 0;
+                            let defenderCount = 0;
+                            player.wonFootballers.forEach(f => {
+                                const val = getRealValue(f);
+                                const pos = gamePositions[f] || 'Striker';
+                                if (pos === 'Striker') {
+                                    strikerCount++;
+                                    if (strikerCount > 1) {
+                                        sum += val * 0.5;
+                                    } else {
+                                        sum += val;
+                                    }
+                                } else if (pos === 'Center Mid' || pos === 'Winger') {
+                                    midfielderCount++;
+                                    if (midfielderCount > 2) {
+                                        sum += val * 0.5;
+                                    } else {
+                                        sum += val;
+                                    }
+                                } else if (pos === 'Center Back' || pos === 'Full Back') {
+                                    defenderCount++;
+                                    if (defenderCount > 2) {
+                                        sum += val * 0.5;
+                                    } else {
+                                        sum += val;
+                                    }
+                                } else {
+                                    sum += val;
+                                }
+                            });
+                            return sum;
+                        }
+                        
+                        list.sort((a, b) => {
+                            const valA = getTeamValue(a);
+                            const valB = getTeamValue(b);
+                            const valComp = valB - valA;
+                            if (valComp !== 0) return valComp;
+                            return b.budget - a.budget;
+                        });
+                        
+                        list.forEach((player, index) => {
+                            const isMe = player.id === playerId;
+                            const rank = index + 1;
+                            
+                            const item = document.createElement('div');
+                            item.className = 'board-item';
+                            if (isMe) item.classList.add('self');
+                            item.style.marginBottom = '10px';
+                            
+                            const row = document.createElement('div');
+                            row.className = 'board-row';
+                            
+                            const rankSpan = document.createElement('span');
+                            rankSpan.className = 'board-rank';
+                            if (rank === 1) rankSpan.classList.add('rank-gold');
+                            else if (rank === 2) rankSpan.classList.add('rank-silver');
+                            else if (rank === 3) rankSpan.classList.add('rank-bronze');
+                            rankSpan.textContent = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`;
+                            
+                            const nameSpan = document.createElement('span');
+                            nameSpan.className = 'board-name';
+                            nameSpan.textContent = player.name + (isMe ? " (You)" : "");
+                            
+                            const scoreSpan = document.createElement('div');
+                            scoreSpan.className = 'board-score';
+                            
+                            const countSpan = document.createElement('span');
+                            countSpan.className = 'board-count';
+                            countSpan.textContent = `$${getTeamValue(player)}M`;
+                            
+                            const walletSpan = document.createElement('div');
+                            walletSpan.className = 'board-wallet';
+                            walletSpan.textContent = `Wallet: $${player.budget}M`;
+                            
+                            scoreSpan.appendChild(countSpan);
+                            scoreSpan.appendChild(walletSpan);
+                            
+                            row.appendChild(rankSpan);
+                            row.appendChild(nameSpan);
+                            row.appendChild(scoreSpan);
+                            item.appendChild(row);
+                            
+                            if (player.wonFootballers && player.wonFootballers.length > 0) {
+                                const tags = document.createElement('div');
+                                tags.className = 'board-tags';
+                                player.wonFootballers.forEach(f => {
+                                    const tag = document.createElement('span');
+                                    tag.className = 'tag';
+                                    const pos = gamePositions[f] || 'Striker';
+                                    tag.textContent = `${f} (${pos} - $${getRealValue(f)}M)`;
+                                    tags.appendChild(tag);
+                                });
+                                item.appendChild(tags);
+                            } else {
+                                const noPlayers = document.createElement('div');
+                                noPlayers.style.fontSize = '11px';
+                                noPlayers.style.color = 'var(--text-muted)';
+                                noPlayers.style.marginTop = '6px';
+                                noPlayers.style.fontStyle = 'italic';
+                                noPlayers.style.fontWeight = 'bold';
+                                noPlayers.style.paddingLeft = '32px';
+                                noPlayers.textContent = 'No footballers won yet';
+                                item.appendChild(noPlayers);
+                            }
+                            
+                            listContainer.appendChild(item);
+                        });
+                    }
+                }
+                modal.style.display = 'flex';
+            } else {
+                modal.style.display = 'none';
+            }
+        };
+
+        window.closeLeaderboardModal = function(event) {
+            const modal = document.getElementById('leaderboard-modal');
+            if (modal && event.target === modal) {
+                window.toggleLeaderboardModal(false);
+            }
+        };
 
         // UUID helper
         function generateUUID() {

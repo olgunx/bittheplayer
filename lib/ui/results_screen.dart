@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../network/game_protocol.dart';
 import '../network/instances.dart';
+import 'lobby_screen.dart';
 import 'theme.dart';
 
 class ResultsScreen extends StatefulWidget {
@@ -24,7 +25,12 @@ class _ResultsScreenState extends State<ResultsScreen> {
       if (gameClient.serverState == 'lobby') {
         if (mounted) {
           gameClient.removeListener(_clientListener);
-          Navigator.pop(context); // Go back to lobby screen
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => LobbyScreen(isHost: widget.isHost),
+            ),
+          );
         }
       }
     };
@@ -51,12 +57,45 @@ class _ResultsScreenState extends State<ResultsScreen> {
     }
   }
 
-  int _getPlayerTeamValue(Player player) {
-    int sum = 0;
+  num _getPlayerTeamValue(Player player) {
+    num sum = 0;
+    int strikerCount = 0;
+    int midfielderCount = 0;
+    int defenderCount = 0;
     for (var f in player.wonFootballers) {
-      sum += gameClient.realValues[f] ?? 50;
+      final val = gameClient.realValues[f] ?? 50;
+      final pos = gameClient.footballerPositions[f] ?? 'Striker';
+      
+      if (pos == 'Striker') {
+        strikerCount++;
+        if (strikerCount > 1) {
+          sum += val * 0.5;
+        } else {
+          sum += val;
+        }
+      } else if (pos == 'Center Mid' || pos == 'Winger') {
+        midfielderCount++;
+        if (midfielderCount > 2) {
+          sum += val * 0.5;
+        } else {
+          sum += val;
+        }
+      } else if (pos == 'Center Back' || pos == 'Full Back') {
+        defenderCount++;
+        if (defenderCount > 2) {
+          sum += val * 0.5;
+        } else {
+          sum += val;
+        }
+      } else {
+        sum += val;
+      }
     }
     return sum;
+  }
+
+  String _formatValuation(num value) {
+    return value % 1 == 0 ? value.toInt().toString() : value.toString();
   }
 
   List<Player> _getRankedPlayers() {
@@ -193,14 +232,14 @@ class _ResultsScreenState extends State<ResultsScreen> {
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
-                                    Text(
-                                      "\$${_getPlayerTeamValue(player)}M Value",
-                                      style: const TextStyle(
-                                        color: GameTheme.accent,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14,
-                                      ),
-                                    ),
+                                     Text(
+                                       "\$${_formatValuation(_getPlayerTeamValue(player))}M Value",
+                                       style: const TextStyle(
+                                         color: GameTheme.accent,
+                                         fontWeight: FontWeight.bold,
+                                         fontSize: 14,
+                                       ),
+                                     ),
                                     Text(
                                       "Wallet: \$${player.budget}M (${player.wonFootballers.length} Players)",
                                       style: const TextStyle(

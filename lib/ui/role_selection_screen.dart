@@ -166,6 +166,54 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
     }
   }
 
+  void _showHelpDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.help_outline, color: GameTheme.primary),
+            SizedBox(width: 10),
+            Text("How To Play", style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: const SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _HelpSection(
+                title: "🔨 The Auction",
+                description: "Bid on footballers using quick increment buttons (+\$5M, +\$10M, etc.) or custom entries. Bids must exceed current highest bid and fit your budget.",
+              ),
+              SizedBox(height: 12),
+              _HelpSection(
+                title: "🛡️ Sniping Protection",
+                description: "If a bid is placed in the last 5 seconds of a round, the timer is extended by 3 seconds to allow others to react.",
+              ),
+              SizedBox(height: 12),
+              _HelpSection(
+                title: "🔄 Position Alternation",
+                description: "Footballer positions alternate round-by-round (Striker, Winger, Center Mid, Center Back, Full Back). Make sure to plan your budget for all rounds!",
+              ),
+              SizedBox(height: 12),
+              _HelpSection(
+                title: "🏆 Winning Condition",
+                description: "The scoreboard ranks players by the total Real Value of won footballers, not your bid amount. Real values are hidden during bidding and revealed at game over.",
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("GOT IT"),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -175,6 +223,11 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
               backgroundColor: Colors.transparent,
               elevation: 0,
               actions: [
+                IconButton(
+                  icon: const Icon(Icons.info_outline, color: GameTheme.secondary),
+                  tooltip: "How To Play",
+                  onPressed: () => _showHelpDialog(context),
+                ),
                 IconButton(
                   icon: const Icon(Icons.storage, color: GameTheme.primary),
                   tooltip: "Database Manager",
@@ -496,6 +549,43 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _HelpSection extends StatelessWidget {
+  final String title;
+  final String description;
+
+  const _HelpSection({
+    Key? key,
+    required this.title,
+    required this.description,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            color: GameTheme.secondary,
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          description,
+          style: const TextStyle(
+            color: GameTheme.textMuted,
+            fontSize: 12,
+            height: 1.4,
+          ),
+        ),
+      ],
     );
   }
 }
